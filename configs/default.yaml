@@ -142,14 +142,15 @@ DATASET:
     UNIT_LEN: 4
     FPS: 20
   HUMANML3D:
-    MAX_MOTION_LEN: 200
-    MIN_MOTION_LEN: 20
-    MAX_TEXT_LEN: 20
+    MAX_MOTION_LEN: 400 # 200
+    MIN_MOTION_LEN: 0  # 20
+    MAX_TEXT_LEN: 150  # 20
     PICK_ONE_TEXT: true
     FRAME_RATE: 20.0
     UNIT_LEN: 4
     STD_TEXT: False
     FPS: 20
+    CUSTOM_DATASET: "humanml"  # "humanml" or "lingo"
   MotionX:
     MAX_MOTION_LEN: 300
     MIN_MOTION_LEN: 40

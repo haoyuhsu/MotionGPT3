@@ -130,6 +130,16 @@ def parse_args(phase="train"):
                            required=False,
                            help="debug or not")
 
+        group.add_argument("--pretrained",
+                           type=str,
+                           required=False,
+                           default=None,
+                           help="path to pretrained checkpoint")
+        group.add_argument("--custom_dataset",
+                           type=str,
+                           default="humanml",
+                           help="custom dataset name (humanml or lingo)")
+
 
     if phase == "demo":
         group.add_argument("--task",
@@ -193,6 +203,9 @@ def parse_args(phase="train"):
         cfg.model.params.task = params.task if params.task else cfg.model.params.task
         cfg.DEBUG = not params.nodebug if params.nodebug is not None else cfg.DEBUG
         cfg.TRAIN.accumulate_grad_batches = params.accumulate_grad_batches if params.accumulate_grad_batches else cfg.TRAIN.accumulate_grad_batches
+
+        cfg.TRAIN.PRETRAINED = params.pretrained if params.pretrained else cfg.TRAIN.PRETRAINED
+        cfg.DATASET.HUMANML3D.CUSTOM_DATASET = params.custom_dataset if params.custom_dataset else cfg.DATASET.HUMANML3D.CUSTOM_DATASET
 
         # Force no debug in test
         if phase == "test":

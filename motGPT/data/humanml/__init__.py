@@ -6,3 +6,4 @@ from .dataset_m_vq import MotionDatasetVQ
 from .dataset_t2m_v3 import Text2MotionDatasetCBV3
 from .dataset_t2m_eval_v3 import Text2MotionDatasetEvalV3
 # from .dataset_t2m_eval import Text2MotionDatasetEval
+from .dataset_t2m_custom_m2t import Text2MotionDatasetM2T

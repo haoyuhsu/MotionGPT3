@@ -12,8 +12,26 @@ def load_pretrained(cfg, model, logger=None, phase="train"):
         
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     state_dict = ckpt["state_dict"]
-    model.load_state_dict(state_dict, strict=True)
+
+    # Filter out unexpected keys
+    model_keys = set(model.state_dict().keys())
+    checkpoint_keys = set(state_dict.keys())
+    unexpected_keys = checkpoint_keys - model_keys
+    missing_keys = model_keys - checkpoint_keys
+    
+    if unexpected_keys:
+        if logger is not None:
+            logger.warning(f"Unexpected keys in checkpoint (will be ignored): {unexpected_keys}")
+        # Remove unexpected keys
+        state_dict = {k: v for k, v in state_dict.items() if k in model_keys}
+    
+    if missing_keys:
+        if logger is not None:
+            logger.warning(f"Missing keys in checkpoint: {missing_keys}")
+
+    model.load_state_dict(state_dict, strict=False)
     model.epoch = ckpt.get('epoch', -1)
+
     return model
 
 

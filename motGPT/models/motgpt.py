@@ -416,7 +416,7 @@ class MotGPT(BaseModel):
         if self.hparams.stage == "vae" and split in ["train", "val"]:
             rs_set = self.train_vae_forward(batch)
             loss = self._losses['losses_' + split].update(rs_set)
-        elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_finetune", "lm_adaptor_pretrain"
+        elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_finetune", "lm_adaptor_pretrain", "m2t"
                                     ] and split in ["train"]:
             rs_set = self.train_lm_forward(batch)
             # rs_set['diff_loss'] = self.forward_diff_loss(batch["motion"], rs_set['hidden'])
@@ -429,7 +429,7 @@ class MotGPT(BaseModel):
         if split in ["val", "test"]:
             if self.hparams.stage == "vae":
                 rs_set = self.val_vae_forward(batch, split)
-            elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_finetune", "lm_rl", "lm_adaptor_pretrain"]:
+            elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_finetune", "lm_rl", "lm_adaptor_pretrain", "m2t"]:
                 if self.hparams.task == "t2m":
                     rs_set = self.val_t2m_forward(batch)
                 elif self.hparams.task == "m2t":
@@ -539,7 +539,7 @@ class MotGPT(BaseModel):
                         raise TypeError(f"Not support this metric {metric}")
 
             elif self.hparams.task in ["m2t",'t2t'] and self.hparams.stage in [
-                    "lm_instruct", "lm_pretrain", "lm_finetune", "lm_rl", "lm_adaptor_pretrain"
+                    "lm_instruct", "lm_pretrain", "lm_finetune", "lm_rl", "lm_adaptor_pretrain", "m2t"
             ]:
                 if batch_idx == 0 and self.global_rank == 0:
                     feats_ref = rs_set['m_ref']
@@ -559,18 +559,27 @@ class MotGPT(BaseModel):
                         np.savetxt(os.path.join(output_dir, f'{keyid}_gt.txt'), [batch['text'][idx]], fmt='%s')
                         np.savetxt(os.path.join(output_dir, f'{keyid}.txt'), [gen_texts[idx]], fmt='%s')
                         
-                self.hparams.metrics_dict = metrics_dicts = ['M2TMetrics']
-                for metric in metrics_dicts:
-                    if metric == "M2TMetrics":
-                        getattr(self.metrics, metric).update(
-                            feats_ref=rs_set["m_ref"],
-                            pred_texts=rs_set["t_pred"],
-                            gt_texts=batch["all_captions"],
-                            lengths=rs_set['length'],
-                            word_embs=batch["word_embs"],
-                            pos_ohot=batch["pos_ohot"],
-                            text_lengths=batch["text_len"],
-                        )
+                # self.hparams.metrics_dict = metrics_dicts = ['M2TMetrics']
+                # for metric in metrics_dicts:
+                #     if metric == "M2TMetrics":
+                #         # getattr(self.metrics, metric).update(
+                #         #     feats_ref=rs_set["m_ref"],
+                #         #     pred_texts=rs_set["t_pred"],
+                #         #     gt_texts=batch["all_captions"],
+                #         #     lengths=rs_set['length'],
+                #         #     word_embs=batch["word_embs"],
+                #         #     pos_ohot=batch["pos_ohot"],
+                #         #     text_lengths=batch["text_len"],
+                #         # )
+                #         getattr(self.metrics, metric).update(
+                #             feats_ref=rs_set["m_ref"],
+                #             pred_texts=rs_set["t_pred"],
+                #             gt_texts=batch["all_captions"],
+                #             lengths=rs_set['length'],
+                #             word_embs=None,
+                #             pos_ohot=None,
+                #             text_lengths=None,
+                #         )
 
         # return forward output rather than loss during test
         if split in ["test"]:

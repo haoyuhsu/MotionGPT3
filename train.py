@@ -10,7 +10,7 @@ from motGPT.utils.load_checkpoint import load_pretrained, load_pretrained_vae
 
 def main():
     # Configs
-    cfg = parse_args(phase="train")  # parse config file
+    cfg, params = parse_args(phase="train")  # parse config file
 
     # Logger
     logger = create_logger(cfg, phase="train")  # create logger

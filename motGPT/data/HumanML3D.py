@@ -7,7 +7,7 @@ from .humanml.scripts.motion_process import (process_file, recover_from_ric)
 from . import BASEDataModule
 from .humanml import (
     Text2MotionDataset, Text2MotionDatasetCB, MotionDataset, MotionDatasetVQ, Text2MotionDatasetToken, 
-    Text2MotionDatasetCBV3, Text2MotionDatasetEvalV3
+    Text2MotionDatasetCBV3, Text2MotionDatasetEvalV3, Text2MotionDatasetM2T
 )
 from .utils import humanml3d_collate
 
@@ -65,6 +65,8 @@ class HumanML3DDataModule(BASEDataModule):
         self.hparams.stage = cfg.TRAIN.STAGE
         self.hparams.w_vectorizer = WordVectorizer(
             cfg.DATASET.WORD_VERTILIZER_PATH, "our_vab")
+
+        self.hparams.custom_dataset = cfg.DATASET.HUMANML3D.CUSTOM_DATASET
 
         # Dataset switch
         self.DatasetEval = Text2MotionDatasetEvalV3
