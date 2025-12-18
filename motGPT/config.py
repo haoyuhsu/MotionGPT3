@@ -69,6 +69,13 @@ def parse_args(phase="train"):
     parser = ArgumentParser()
     group = parser.add_argument_group("Training options")
 
+
+    ##########################################
+    ##### TODO: temporary config settings #####
+    parser.add_argument('--input_263_dim_dir', type=str, required=False, default=None, help='path to 263 input dim')
+    parser.add_argument('--output_text_dir', type=str, required=False, default=None, help='path to output text prediction')
+    ##########################################
+
     # Assets
     group.add_argument(
         "--cfg_assets",
@@ -212,11 +219,11 @@ def parse_args(phase="train"):
 
     # Debug mode
     if cfg.DEBUG:
-        cfg.NAME = "debug--" + cfg.NAME
+        cfg.NAME = "debug--" # + cfg.NAME
         cfg.LOGGER.WANDB.params.offline = True
         cfg.LOGGER.VAL_EVERY_STEPS = 1
         
     # Resume config
     cfg = resume_config(cfg)
 
-    return cfg
+    return cfg, params

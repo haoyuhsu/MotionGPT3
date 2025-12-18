@@ -16,6 +16,7 @@ from motGPT.models.build_model import build_model
 from motGPT.utils.logger import create_logger
 import motGPT.render.matplot.plot_3d_global as plot_3d
 
+
 def motion_token_to_string(motion_token, lengths, codebook_size=512):
     motion_string = []
     for i in range(motion_token.shape[0]):
@@ -193,14 +194,13 @@ def main():
     output_text_dir = params.output_text_dir
     os.makedirs(output_text_dir, exist_ok=True)
 
-    motion_feat_list = [os.path.join(input_263_dim_dir, f) for f in sorted(os.listdir(input_263_dim_dir)) if f.endswith('.npy')]
+    motion_feat_list = [os.path.join(input_263_dim_dir, f) for f in os.listdir(input_263_dim_dir) if f.endswith('.npy')]
 
-    # for HumanML (3703)
-    # motion_feat_list = [os.path.join(input_263_dim_dir, f"sample_seq_{i:04d}.npy") for i in range(3703)]
+    # id_xxxxx_step_0.npy
+    motion_feat_list = sorted(motion_feat_list, key=lambda x: int(os.path.basename(x).split('_')[1]))
 
-
-    # # temp deebug
-    # motion_feat_list = [os.path.join(input_263_dim_dir, f"sample_seq_{4552:04d}.npy")]
+    # for HumanML (only use 3703)
+    # motion_feat_list = [os.path.join(input_263_dim_dir, f"id_{i}_step_0.npy") for i in range(3703)]
 
 
     bs = 4

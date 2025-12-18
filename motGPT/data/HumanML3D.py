@@ -95,9 +95,9 @@ class HumanML3DDataModule(BASEDataModule):
             self.Dataset = Text2MotionDataset
 
         # Get additional info of the dataset
-        self._sample_set = self.get_sample_set(overrides={"split": "test", "tiny": True})
-        self.nfeats = self._sample_set.nfeats
-        cfg.DATASET.NFEATS = self.nfeats
+        # self._sample_set = self.get_sample_set(overrides={"split": "test", "tiny": True})
+        # self.nfeats = self._sample_set.nfeats
+        # cfg.DATASET.NFEATS = self.nfeats
         
     def feats2joints(self, features):
         mean = torch.tensor(self.hparams.mean).to(features)
