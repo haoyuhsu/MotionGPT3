@@ -136,7 +136,7 @@ def getCheckpointCallback(cfg, logger=None, **kwargs):
                 del metric_monitors['Metrics/R_precision_top_3']
 
             # Skip M2TMetrics checkpoints during m2t training (only available during validation)
-            if cfg.TRAIN.STAGE == 'm2t' and metric == 'M2TMetrics':
+            if cfg.TRAIN.STAGE == 'lm_m2t' and metric == 'M2TMetrics':
                 continue  # Skip creating checkpoints for M2TMetrics during training
 
             for metric_monitor in metric_monitors:

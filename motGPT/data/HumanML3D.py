@@ -78,7 +78,7 @@ class HumanML3DDataModule(BASEDataModule):
             else:
                 # self.Dataset = MotionDataset
                 self.Dataset = Text2MotionDataset
-        elif cfg.TRAIN.STAGE == "m2t":
+        elif cfg.TRAIN.STAGE == "lm_m2t":  # explicitly for m2t finetune
             self.Dataset = Text2MotionDatasetM2T
             self.DatasetEval = Text2MotionDatasetM2T
         elif 'lm' in cfg.TRAIN.STAGE:

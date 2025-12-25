@@ -29,7 +29,7 @@ ABLATION:
   
 TRAIN:
   #---------------------------------
-  STAGE: m2t # stage "lm_t2m" , "lm_pretrain", "lm_instruct", "lm_finetune", "m2t"
+  STAGE: lm_m2t # stage "lm_t2m" , "lm_pretrain", "lm_instruct", "lm_finetune", "lm_m2t"
   instruction_type: all # all, t2m, m2t
   #---------------------------------
   NUM_WORKERS: 8 # Number of workers
