@@ -135,10 +135,6 @@ def parse_args(phase="train"):
                            required=False,
                            default=None,
                            help="path to pretrained checkpoint")
-        group.add_argument("--custom_dataset",
-                           type=str,
-                           default="humanml",
-                           help="custom dataset name (humanml or lingo)")
 
 
     if phase == "demo":
@@ -205,7 +201,7 @@ def parse_args(phase="train"):
         cfg.TRAIN.accumulate_grad_batches = params.accumulate_grad_batches if params.accumulate_grad_batches else cfg.TRAIN.accumulate_grad_batches
 
         cfg.TRAIN.PRETRAINED = params.pretrained if params.pretrained else cfg.TRAIN.PRETRAINED
-        cfg.DATASET.HUMANML3D.CUSTOM_DATASET = params.custom_dataset if params.custom_dataset else cfg.DATASET.HUMANML3D.CUSTOM_DATASET
+        # cfg.DATASET.HUMANML3D.CUSTOM_DATASET = params.custom_dataset if params.custom_dataset else cfg.DATASET.HUMANML3D.CUSTOM_DATASET
 
         # Force no debug in test
         if phase == "test":

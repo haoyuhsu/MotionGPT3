@@ -78,6 +78,9 @@ class HumanML3DDataModule(BASEDataModule):
             else:
                 # self.Dataset = MotionDataset
                 self.Dataset = Text2MotionDataset
+        elif cfg.TRAIN.STAGE == "m2t":
+            self.Dataset = Text2MotionDatasetM2T
+            self.DatasetEval = Text2MotionDatasetM2T
         elif 'lm' in cfg.TRAIN.STAGE:
             self.hparams.code_path = cfg.DATASET.CODE_PATH
             self.hparams.task_path = cfg.DATASET.TASK_PATH
@@ -90,9 +93,6 @@ class HumanML3DDataModule(BASEDataModule):
         elif cfg.TRAIN.STAGE == "token":
             self.Dataset = Text2MotionDatasetToken
             self.DatasetEval = Text2MotionDatasetToken
-        elif cfg.TRAIN.STAGE == "m2t":
-            self.Dataset = Text2MotionDatasetM2T
-            self.DatasetEval = Text2MotionDatasetM2T
         else:
             self.Dataset = Text2MotionDataset
 

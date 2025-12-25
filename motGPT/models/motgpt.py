@@ -140,6 +140,7 @@ class MotGPT(BaseModel):
                 # bad_words_ids=self.bad_words_ids
             )
             gen_texts = cleaned_text
+            
             # return set
             outputs = {
                 "texts": gen_texts,

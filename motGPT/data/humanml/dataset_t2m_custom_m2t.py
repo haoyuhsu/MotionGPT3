@@ -70,8 +70,8 @@ class Text2MotionDatasetM2T(data.Dataset):
             if any(id.startswith(ds_name) for ds_name in target_datasets)
         ]
 
-        # TODO: fast debugging
-        # self.id_list = self.id_list[:100]
+        # (TODO: for temp DEBUGGING)
+        # self.id_list = self.id_list[:10]
 
         new_name_list = []
         data_dict = {}
@@ -89,6 +89,9 @@ class Text2MotionDatasetM2T(data.Dataset):
 
             if len(motion) >= self.max_motion_length:  # truncate long motions
                 motion = motion[:self.max_motion_length]
+
+            if len(texts) == 0:  # skip no text motions
+                continue
 
             data_dict[name] = {
                 'motion': motion,
@@ -120,6 +123,8 @@ class Text2MotionDatasetM2T(data.Dataset):
 
         # Random caption selection
         caption = np.random.choice(text_list)
+
+        # caption = text_list[0]  # always use the first caption for m2t (TODO: for temp DEBUGGING)
         
         all_captions = [str(text) for text in text_list]
 
@@ -144,7 +149,7 @@ class Text2MotionDatasetM2T(data.Dataset):
         tasks = {
             'class': 'm2t',
             'input': ['Describe the motion represented by <Motion_Placeholder> using plain English.'],
-            'output': ['']
+            'output': ['<Caption_Placeholder>']
         }
 
         return caption, None, None, motion, m_length, None, None, None, None, all_captions, tasks, fname

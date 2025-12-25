@@ -1,4 +1,4 @@
-NAME: MoT_vae_custom_finetune_lingo # Experiment names
+NAME: MoT_vae_custom_finetune_lingo_debug # Experiment names
 ACCELERATOR: 'gpu' # Devices optioncal: “cpu”, “gpu”, “tpu”, “ipu”, “hpu”, “mps, “auto”
 NUM_NODES: 1 # Number of GPU nodes for distributed training
 DEVICE: [0] # Index of gpus eg. [0] or [0,1,2,3]
@@ -84,7 +84,7 @@ LOSS:
   LAMBDA_VELOCITY: 0.5
   LAMBDA_COMMIT: 0.02
   LAMBDA_CLS: 1.0
-  LAMBDA_DIFF: 0.0
+  LAMBDA_DIFF: 0.0  # no motion output
   ABLATION:
     RECONS_LOSS: 'l1_smooth'
 
