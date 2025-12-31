@@ -36,7 +36,7 @@ TRAIN:
   BATCH_SIZE: 32 # Size of batches
   # accumulate_grad_batches: 1
   END_EPOCH: 300 # End epoch
-  # RESUME: '' # Resume training from this path
+  RESUME: '/projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/experiments/motgpt/MoT_vae_custom_from_scratch_humanml' # Resume training from this path
   PRETRAINED: '' # Preatrained model path
   PRETRAINED_VAE: checkpoints/1222_mld_humanml3d_FID041.ckpt # Vae model path
 
