@@ -1,4 +1,4 @@
-NAME: MoT_vae_custom_finetune_lingo # Experiment names
+NAME: MoT_vae_custom_from_scratch_parahome # Experiment names
 ACCELERATOR: 'gpu' # Devices optioncal: “cpu”, “gpu”, “tpu”, “ipu”, “hpu”, “mps, “auto”
 NUM_NODES: 1 # Number of GPU nodes for distributed training
 DEVICE: [0] # Index of gpus eg. [0] or [0,1,2,3]
@@ -36,8 +36,8 @@ TRAIN:
   BATCH_SIZE: 32 # Size of batches
   # accumulate_grad_batches: 1
   END_EPOCH: 300 # End epoch
-  RESUME: '/projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/experiments/motgpt/MoT_vae_custom_finetune_lingo' # Resume training from this path
-  # PRETRAINED: /projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/checkpoints/motiongpt3.ckpt # Preatrained model path
+  RESUME: '' # Resume training from this path
+  PRETRAINED: '' # Preatrained model path
   PRETRAINED_VAE: checkpoints/1222_mld_humanml3d_FID041.ckpt # Vae model path
 
   LR_SCHEDULER:
@@ -64,7 +64,7 @@ EVAL:
   # SPLIT: val-train
 
 TEST:
-  CHECKPOINTS:  experiments/motgpt/MoT_vae_stage1_t2m/checkpoints/last.ckpt
+  CHECKPOINTS: experiments/motgpt/MoT_vae_custom_from_scratch_lingo/checkpoints/last.ckpt
   # max-R3ep=0 / min-FIDep=0-v1/ last-v1
   SPLIT: test
   BATCH_SIZE: 32 # training Batch size
@@ -74,7 +74,9 @@ DATASET:
   target: motGPT.data.HumanML3D.HumanML3DDataModule
   CODE_PATH: TOKENS
   HUMANML3D:
-    CUSTOM_DATASET: "lingo"  # "humanml", "lingo", "parahome", or "humoto"
+    CUSTOM_DATASET: "parahome"  # "humanml", "lingo", "parahome", or "humoto"
+    MAX_MOTION_LEN: 498
+    MAX_TEXT_LEN: 250
 
 METRIC:
   TYPE: ['M2TMetrics']  # TM2TMetrics

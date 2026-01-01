@@ -150,7 +150,7 @@ DATASET:
     UNIT_LEN: 4
     STD_TEXT: False
     FPS: 20
-    CUSTOM_DATASET: "humanml"  # "humanml" or "lingo"
+    CUSTOM_DATASET: "humanml"  # "humanml", "lingo", "parahome", or "humoto"
   MotionX:
     MAX_MOTION_LEN: 300
     MIN_MOTION_LEN: 40
