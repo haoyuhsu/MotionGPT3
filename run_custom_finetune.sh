@@ -9,7 +9,6 @@ python -m train \
     --nodebug
 
 
-
 python -m train \
     --cfg configs/MoT_vae_custom_finetune_lingo_debug.yaml \
     --nodebug

@@ -64,7 +64,7 @@ EVAL:
   # SPLIT: val-train
 
 TEST:
-  CHECKPOINTS:  experiments/motgpt/MoT_vae_stage1_t2m/checkpoints/last.ckpt
+  CHECKPOINTS: experiments/motgpt/MoT_vae_custom_from_scratch_lingo/checkpoints/last.ckpt
   # max-R3ep=0 / min-FIDep=0-v1/ last-v1
   SPLIT: test
   BATCH_SIZE: 32 # training Batch size

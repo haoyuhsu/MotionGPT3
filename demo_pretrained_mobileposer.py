@@ -16,6 +16,7 @@ from motGPT.models.build_model import build_model
 from motGPT.utils.logger import create_logger
 import motGPT.render.matplot.plot_3d_global as plot_3d
 
+
 def motion_token_to_string(motion_token, lengths, codebook_size=512):
     motion_string = []
     for i in range(motion_token.shape[0]):

@@ -211,7 +211,7 @@ def parse_args(phase="train"):
 
     if phase == "demo":
         cfg.DEMO.EXAMPLE = params.example
-        # cfg.DEMO.TASK = params.task
+        cfg.DEMO.TASK = params.task
         cfg.TEST.FOLDER = params.out_dir if params.out_dir else cfg.TEST.FOLDER
         os.makedirs(cfg.TEST.FOLDER, exist_ok=True)
 

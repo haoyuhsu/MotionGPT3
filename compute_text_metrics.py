@@ -4,6 +4,9 @@ from torchmetrics import Metric
 from bert_score import score as score_bert
 from tqdm import tqdm 
 import numpy as np
+import pickle
+import os
+
 
 class M2TMetrics(Metric):
 
@@ -17,6 +20,7 @@ class M2TMetrics(Metric):
         self.cfg = cfg
         self.dataname = dataname
         self.name = "NLG metrics"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.add_state("count_seq",
                        default=torch.tensor(0),
@@ -131,9 +135,6 @@ if __name__ == "__main__":
     #     "A person runs fast across the space.",
     #     "Someone lifts their arms upward."
     # ]
-    
-    import pickle
-    import os
 
 
     ##### MobilePoser motions + MotionGPT3 text predictions #####
@@ -344,6 +345,8 @@ if __name__ == "__main__":
         else:
             print(f"{metric_name}: {value}")
     print("="*50)
+
+
 
 
 
