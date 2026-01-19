@@ -107,22 +107,52 @@ def main():
         motion_feats = torch.tensor(np.load(motion_feat_path), device=device)  # (motion_length, 263)
         motion_feats = model.datamodule.normalize(motion_feats)
 
-        if motion_feats.shape[0] > 498:
-            motion_feats = motion_feats[:498]   # truncate to max length 498 since this is the maximum length
+        if 'parahome' in cfg.NAME:
+            max_motion_len = cfg.DATASET.HUMANML3D.MAX_MOTION_LEN
+            
+            motion_length = motion_feats.shape[0]
+            num_chunks = motion_length // max_motion_len + 1
+            
+            all_pred_texts = []
+            
+            for chunk_idx in range(num_chunks):
+                start_idx = chunk_idx * max_motion_len
+                end_idx = start_idx + max_motion_len
+                
+                motion_chunk = motion_feats[start_idx:end_idx]  # (max_motion_len, 263)
+                motion_chunk = motion_chunk.unsqueeze(0)  # (1, max_motion_len, 263)
+                lengths = [motion_chunk.shape[1]]  # list of lengths
+                
+                pred_text = predict_text_from_motion(motion_chunk, lengths)
+                
+                # pred_text should be a list of length 1
+                assert len(pred_text) == 1
+                cleaned_text = pred_text[0].replace('"', '').lstrip().rstrip()
+                all_pred_texts.append(cleaned_text)
+            
+            # Concatenate all texts with space
+            final_text = ' '.join(all_pred_texts)
+            print(f"Prediction for {motion_feat_path} ({num_chunks} chunks): {final_text}")
+
+        else:
+            if motion_feats.shape[0] > 498:
+                motion_feats = motion_feats[:498]   # truncate to max length 498 since this is the maximum length
         
-        motion_feats = motion_feats.unsqueeze(0)  # (1, motion_length, 263)
-        lengths = [motion_feats.shape[1]]  # list of lengths
+            motion_feats = motion_feats.unsqueeze(0)  # (1, motion_length, 263)
+            lengths = [motion_feats.shape[1]]  # list of lengths
 
-        pred_text = predict_text_from_motion(motion_feats, lengths)
-        print(f"Prediction for {motion_feat_path}: {pred_text}")
+            pred_text = predict_text_from_motion(motion_feats, lengths)
+            print(f"Prediction for {motion_feat_path}: {pred_text}")
 
-        # pred_text should be a list of length 1
-        assert len(pred_text) == 1
-        cleaned_text = pred_text[0].replace('"', '').lstrip().rstrip()
-        print(f"Cleaned Prediction: {cleaned_text}")
+            # pred_text should be a list of length 1
+            assert len(pred_text) == 1
+            cleaned_text = pred_text[0].replace('"', '').lstrip().rstrip()
+            # print(f"Cleaned Prediction: {cleaned_text}")
+
+            final_text = cleaned_text
 
         with open(output_text_path, 'w', encoding='utf-8') as f:
-            f.write(cleaned_text)
+            f.write(final_text)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,9 @@ from tqdm import tqdm
 import numpy as np
 import pickle
 import os
+import argparse
+from omegaconf import OmegaConf
+import glob
 
 
 class M2TMetrics(Metric):
@@ -20,7 +23,6 @@ class M2TMetrics(Metric):
         self.cfg = cfg
         self.dataname = dataname
         self.name = "NLG metrics"
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.add_state("count_seq",
                        default=torch.tensor(0),
@@ -79,15 +81,39 @@ class M2TMetrics(Metric):
         metrics["CIDEr"] = torch.tensor(scores["cider"]['score'], device=self.device)
 
         # Bert metrics
-        P, R, F1 = score_bert(self.pred_texts,
-                              self.gt_texts,
-                              lang='en',
-                              rescale_with_baseline=True,
-                              idf=True,
-                              device=self.device,
-                              verbose=False)
+        batch_size = 64
+        P_scores, R_scores, F1_scores = [], [], []
+        print(f"Computing BERTScore in batches of {batch_size}...")
+        for i in range(0, len(self.pred_texts), batch_size):
+            batch_pred = self.pred_texts[i:i+batch_size]
+            batch_gt = self.gt_texts[i:i+batch_size]
+            
+            P, R, F1 = score_bert(batch_pred,
+                                batch_gt,
+                                lang='en',
+                                rescale_with_baseline=True,
+                                idf=True,
+                                device=self.device,
+                                verbose=False)
+            
+            P_scores.append(P)
+            R_scores.append(R)
+            F1_scores.append(F1)
+            
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        metrics["Bert_F1"] = F1.mean()
+        metrics["Bert_F1"] = torch.cat(F1_scores).mean()
+
+        # P, R, F1 = score_bert(self.pred_texts,
+        #                       self.gt_texts,
+        #                       lang='en',
+        #                       rescale_with_baseline=True,
+        #                       idf=True,
+        #                       device=self.device,
+        #                       verbose=False)
+
+        # metrics["Bert_F1"] = F1.mean()
 
         # Reset
         self.reset()
@@ -107,9 +133,267 @@ class M2TMetrics(Metric):
         self.gt_texts.extend(gt_texts)
 
 
-# Example usage
+def eval_and_save(metric, pred_texts, gt_texts, output_path):
+    """Evaluate metrics and save results to a text file."""
+
+    metric.update(pred_texts=pred_texts, gt_texts=gt_texts)
+
+    results = metric.compute(sanity_flag=False)
+    
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    with open(output_path, 'w') as f:
+        f.write("=" * 50 + "\n")
+        f.write("Text Generation Metrics\n")
+        f.write("=" * 50 + "\n")
+        for metric_name, value in results.items():
+            if isinstance(value, torch.Tensor):
+                line = f"{metric_name}: {value.item():.4f}\n"
+            else:
+                line = f"{metric_name}: {value}\n"
+            f.write(line)
+            print(line.strip())
+        f.write("=" * 50 + "\n")
+    
+    print(f"\nResults saved to: {output_path}")
+    return results
+
+
+def load_our_text_prediction(dataset):
+    """Load our direct text predictions from .npy result files."""
+    
+    if dataset == 'parahome':
+        pred_dir = "/scratch/bczy/tcheng1/exp_test_parahome/viz_test_generate_number_merged"
+        files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
+        
+        pred_texts = []
+        gt_texts = []
+        for file in tqdm(files, desc="Loading predictions and ground truth"):
+            data = np.load(file, allow_pickle=True).item()
+            pred_text = data['pred']['description']
+            gt_text = data['gt']['description']
+            pred_texts.append(pred_text)
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'humoto':
+        # pred_dir = "/work/hdd/bczy/tcheng1/exp_test_humoto/viz_test_generate_number_merged"
+        pred_dir = "/scratch/bfyo/tcheng1/exp_test_finetuned_humoto_6imu_1000frame/viz_test_generate_number_original"
+        gt_folder = "/scratch/bfyo/tcheng1/dataset_process/humoto_data/all"
+        files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
+        
+        pred_texts = []
+        gt_texts = []
+        for file in tqdm(files, desc="Loading predictions and ground truth"):
+            data = np.load(file, allow_pickle=True).item()
+            sample_idx = data['sample_idx'][0]
+            pred_text = data['pred']['description']
+            
+            sample = pickle.load(open(f"{gt_folder}/{sample_idx:07d}.pkl", "rb"))
+            gt_text = sample['text']  # list of text
+            
+            pred_texts.append(pred_text)
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'humanml':
+        # pred_dir = "/work/hdd/bczy/tcheng1/exp_test_humanml_6imu_60frame/viz_test_generate_number"
+        pred_dir = "/scratch/bfyo/tcheng1/exp_test_finetuned_humanml_6imu_1000frame/viz_test_generate_number_original"
+        gt_folder = "/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test"
+        files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
+        
+        pred_texts = []
+        gt_texts = []
+        for file in tqdm(files, desc="Loading predictions and ground truth"):
+            data = np.load(file, allow_pickle=True).item()
+            sample_idx = data['sample_idx'][0]
+            pred_text = data['pred']['description']
+            
+            sample = pickle.load(open(f"{gt_folder}/{sample_idx}.pkl", "rb"))
+            gt_text = sample['texts']  # list of text
+            
+            pred_texts.append(pred_text)
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'lingo':
+        # pred_dir = "/work/hdd/bczy/tcheng1/exp_test_lingo_6imu_2000frame/viz_test_generate_number_merged"
+        pred_dir = "/work/hdd/bfyo/tcheng1/exp_test_finetuned_lingo_6imu_120frame/viz_test_generate_number_original"
+        gt_folder = "/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test"
+        files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
+        
+        pred_texts = []
+        gt_texts = []
+        for file in tqdm(files, desc="Loading predictions and ground truth"):
+            data = np.load(file, allow_pickle=True).item()
+            sample_idx = data['sample_idx'][0]
+            pred_text = data['pred']['description']
+            
+            sample = pickle.load(open(f"{gt_folder}/{sample_idx}.pkl", "rb"))
+            gt_text = sample['texts']  # list of text
+            
+            pred_texts.append(pred_text)
+            gt_texts.append(gt_text)
+    
+    return pred_texts, gt_texts
+
+
+def load_our_motion_motiongpt3(dataset):
+    """Load our motion + MotionGPT3 text predictions."""
+    if dataset == 'humanml':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_humanml_text_pred_from_scratch"
+        gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_humanml_6imu_60frame/viz_test_generate_number"
+        test_dataset_dir = '/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test'
+        
+        number_of_samples = len(os.listdir(pred_texts_dir))
+        
+        pred_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+            with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
+                pred_text = f.read().strip()
+            pred_texts.append(pred_text)
+        
+        gt_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading ground truth"):
+            gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
+            test_sample_id = gt_info['sample_idx'][0]
+            with open(os.path.join(test_dataset_dir, f"{test_sample_id}.pkl"), 'rb') as f:
+                data = pickle.load(f)
+            gt_text = data['texts']
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'lingo':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_lingo_text_pred_from_scratch"
+        gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_lingo_6imu_2000frame/viz_test_generate_number_merged"
+        test_dataset_dir = '/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test'
+        
+        number_of_samples = len(os.listdir(pred_texts_dir))
+        
+        pred_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+            with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
+                pred_text = f.read().strip()
+            pred_texts.append(pred_text)
+        
+        gt_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading ground truth"):
+            gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
+            test_sample_id = gt_info['sample_idx'][0]
+            with open(os.path.join(test_dataset_dir, f"{test_sample_id}.pkl"), 'rb') as f:
+                data = pickle.load(f)
+            gt_text = data['texts']
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'humoto':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_humoto_text_pred_from_scratch"
+        gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_humoto/viz_test_generate_number_merged"
+        test_dataset_dir = '/scratch/bfyo/tcheng1/dataset_process/humoto_data/all'
+        
+        number_of_samples = len(os.listdir(pred_texts_dir))
+        
+        pred_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+            with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
+                pred_text = f.read().strip()
+            pred_texts.append(pred_text)
+        
+        gt_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading ground truth"):
+            gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
+            test_sample_id = gt_info['sample_idx'][0]
+            with open(os.path.join(test_dataset_dir, f"{test_sample_id:07d}.pkl"), 'rb') as f:
+                data = pickle.load(f)
+            gt_text = data['text']
+            gt_texts.append(gt_text)
+    
+    elif dataset == 'parahome':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_parahome_text_pred_from_scratch"
+        gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_parahome/viz_test_generate_number_merged"
+        
+        number_of_samples = len(os.listdir(pred_texts_dir))
+        
+        pred_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+            with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
+                pred_text = f.read().strip()
+            pred_texts.append(pred_text)
+        
+        gt_texts = []
+        for i in tqdm(range(number_of_samples), desc="Loading ground truth"):
+            gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
+            gt_text = gt_info['gt']['description']
+            gt_texts.append(gt_text)
+    
+    return pred_texts, gt_texts
+
+
+def load_mobileposer_motiongpt3(dataset):
+    """Load MobilePoser motion + MotionGPT3 text predictions."""
+    if dataset == 'humanml':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_humanml_text_pred_from_scratch"
+        gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/humanml_gt_text.pkl"
+    elif dataset == 'lingo':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_lingo_text_pred_from_scratch"
+        gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/LINGO_gt_text.pkl"
+    elif dataset == 'humoto':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_humoto_text_pred_from_scratch"
+        gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/HUMOTO_gt_text.pkl"
+    elif dataset == 'parahome':
+        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_parahome_text_pred_from_scratch"
+        gt_texts_file = "/scratch/benk/tcheng1/gt_text/ParaHome_gt_text.pkl"
+    
+    with open(gt_texts_file, 'rb') as f:
+        gt_texts_dict = pickle.load(f)
+
+    number_of_samples = len(gt_texts_dict)
+    
+    if dataset == 'parahome':
+        # TODO: may need update
+        gt_texts = [gt_texts_dict[i] for i in range(number_of_samples)]
+    elif dataset in ['humanml', 'lingo', 'humoto']:
+        gt_texts = []
+        gt_data_path = [gt_texts_dict[i] for i in range(number_of_samples)]
+        for data_path in tqdm(gt_data_path, desc="Loading ground truth"):
+
+            # HUMOTO dataset: 
+            # from /scratch/benk/tcheng1/code/imu-human-mllm/dataset_process/humoto_data/all 
+            # into /scratch/bfyo/tcheng1/dataset_process/humoto_data/all
+            if dataset == 'humoto':
+                data_path = data_path.replace('/scratch/benk/tcheng1/code/imu-human-mllm/dataset_process/humoto_data/all',
+                                              '/scratch/bfyo/tcheng1/dataset_process/humoto_data/all')
+
+            with open(data_path, 'rb') as f:
+                data = pickle.load(f)
+                if 'texts' in data:
+                    gt_text = data['texts']
+                elif 'text' in data:
+                    gt_text = data['text']
+                else:
+                    raise ValueError("Ground truth text key not found.")
+                gt_texts.append(gt_text)
+    
+    pred_texts = []
+    for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+        with open(os.path.join(pred_texts_dir, f"sample_seq_{i:04d}.txt"), 'r') as f:
+            pred_text = f.read().strip()
+        pred_texts.append(pred_text)
+    
+    return pred_texts, gt_texts
+
+
+
+
 if __name__ == "__main__":
-    from omegaconf import OmegaConf
+
+    parser = argparse.ArgumentParser(description='Evaluate text generation metrics')
+    parser.add_argument('--setting', type=str, required=True,
+                        choices=['ours_text', 'ours_mgpt3', 'mobileposer_mgpt3'])
+    parser.add_argument('--dataset', type=str, required=True,
+                        choices=['parahome', 'humoto', 'humanml', 'lingo'])
+    parser.add_argument('--out_dir', type=str, required=False, default='./metric_results',
+                        help='Directory to save metric results')
+    args = parser.parse_args()
+
+    print(f"Scenario: {args.setting}")
+    print(f"Dataset: {args.dataset}")
+    print(f"Output directory: {args.out_dir}")
     
     # Create a mock config
     cfg = OmegaConf.create({
@@ -122,19 +406,26 @@ if __name__ == "__main__":
     
     # Initialize metrics
     metric = M2TMetrics(cfg=cfg, dataname='humanml3d')
-    
-    # # Example ground truth and prediction texts
-    # gt_texts = [
-    #     "A person walks forward and then turns left.",
-    #     "Someone is running quickly across the room.",
-    #     "A person raises both arms above their head."
-    # ]
-    
-    # pred_texts = [
-    #     "A person is walking forward and turning to the left.",
-    #     "A person runs fast across the space.",
-    #     "Someone lifts their arms upward."
-    # ]
+    metric = metric.cuda() if torch.cuda.is_available() else metric
+
+    # Load data based on scenario
+    print("\nLoading data...")
+    if args.setting == 'ours_text':
+        pred_texts, gt_texts = load_our_text_prediction(args.dataset)
+    elif args.setting == 'ours_mgpt3':
+        pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
+    elif args.setting == 'mobileposer_mgpt3':
+        pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
+
+    assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
+
+    out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
+    out_path = os.path.join(args.out_dir, out_fname)
+
+    print("\nEvaluating metrics...")
+    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+
+
 
 
     ##### MobilePoser motions + MotionGPT3 text predictions #####
@@ -244,9 +535,9 @@ if __name__ == "__main__":
     # pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_humanml_text_pred"
     # gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_humanml_6imu_60frame/viz_test_generate_number"
     # test_dataset_dir = '/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test'
-
-    # number_of_samples = 3703  # len(os.listdir(pred_texts_dir))
     
+    # number_of_samples = len(os.listdir(pred_texts_dir)[:10])
+
     # pred_texts = []
     # for i in tqdm(range(number_of_samples)):
     #     with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
@@ -259,7 +550,7 @@ if __name__ == "__main__":
     #     test_sample_id = gt_info['sample_idx'][0]
     #     with open(os.path.join(test_dataset_dir, f"{test_sample_id}.pkl"), 'rb') as f:
     #         data = pickle.load(f)
-    #     gt_text = data['texts'][0]
+    #     gt_text = data['texts']
     #     gt_texts.append(gt_text)
 
 
@@ -310,86 +601,20 @@ if __name__ == "__main__":
 
 
     ### PARAHOME ###
-    pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_parahome_text_pred"
-    gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_parahome/viz_test_generate_number_merged"
+    # pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_ours/result_parahome_text_pred"
+    # gt_texts_dir = "/work/hdd/bczy/tcheng1/exp_test_parahome/viz_test_generate_number_merged"
 
-    number_of_samples = len(os.listdir(pred_texts_dir))
+    # number_of_samples = len(os.listdir(pred_texts_dir))
     
-    pred_texts = []
-    for i in tqdm(range(number_of_samples)):
-        with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
-            pred_text = f.read().strip()
-        pred_texts.append(pred_text)
+    # pred_texts = []
+    # for i in tqdm(range(number_of_samples)):
+    #     with open(os.path.join(pred_texts_dir, f"id_{i}_step_0.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
+    #     pred_texts.append(pred_text)
 
-    gt_texts = []
-    for i in tqdm(range(number_of_samples)):
-        gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
-        gt_text = gt_info['gt']['description'][0]
-        gt_texts.append(gt_text)
+    # gt_texts = []
+    # for i in tqdm(range(number_of_samples)):
+    #     gt_info = np.load(os.path.join(gt_texts_dir, f"id_{i}_step_0.npy"), allow_pickle=True).item()
+    #     gt_text = gt_info['gt']['description'][0]
+    #     gt_texts.append(gt_text)
 
-
-
-    # Update metrics with predictions and ground truth
-    metric.update(pred_texts=pred_texts, gt_texts=gt_texts)
-    
-    # Compute final metrics
-    results = metric.compute(sanity_flag=False)
-    
-    # Print results
-    print("\n" + "="*50)
-    print("Text Generation Metrics:")
-    print("="*50)
-    for metric_name, value in results.items():
-        if isinstance(value, torch.Tensor):
-            print(f"{metric_name}: {value.item():.4f}")
-        else:
-            print(f"{metric_name}: {value}")
-    print("="*50)
-
-
-
-
-
-
-# RESULTS:
-# Our motions + MotionGPT3 text predictions
-# ##### HUMANML #####
-# ==================================================
-# Text Generation Metrics:
-# ==================================================
-# ROUGE_L: 0.2740
-# CIDEr: 0.2401
-# bleu_1: 0.2988
-# bleu_4: 0.0517
-# Bert_F1: 0.2364
-# ==================================================
-# ##### LINGO #####
-# ==================================================
-# Text Generation Metrics:
-# ==================================================
-# ROUGE_L: 0.0876
-# CIDEr: 0.0958
-# bleu_1: 0.0647
-# bleu_4: 0.0000
-# Bert_F1: 0.0284
-# ==================================================
-# ##### HUMOTO #####
-# ==================================================
-# Text Generation Metrics:
-# ==================================================
-# ROUGE_L: 0.1812
-# CIDEr: 0.0845
-# bleu_1: 0.1382
-# bleu_4: 0.0154
-# Bert_F1: 0.1069
-# ==================================================
-# ##### PARAHOME #####
-# ==================================================
-# Text Generation Metrics:
-# ==================================================
-# ROUGE_L: 0.0354
-# CIDEr: 0.0000
-# bleu_1: 0.0000
-# bleu_4: 0.0000
-# Bert_F1: -0.2954
-# ==================================================

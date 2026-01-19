@@ -19,3 +19,5 @@ ig-*.py
 checkpoints/
 datasets/
 deps/
+metric_results/
+debug_output/
