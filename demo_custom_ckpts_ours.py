@@ -57,26 +57,78 @@ def main():
 
     def predict_text_from_motion(motion_feats, lengths):
 
+        model_type = cfg.model.target.split('.')[-2]  # 'mgpt' or 'motgpt'
+
         with torch.no_grad():
-            motion_tokens = model.lm.motion_feats_to_tokens(model.vae, motion_feats, lengths, modes='motion')
 
-        tasks = [{
-            'class': 'm2t',
-            'input': ['Describe the motion represented by <Motion_Placeholder> using plain English.'],
-            'output': ['']
-        }] * len(lengths)
-        texts = [''] * len(lengths)
+            # Type 1: MotionGPT3
+            if model_type == 'motgpt':
 
-        inputs, outputs, modes = model.lm.template_fulfill(tasks, lengths, texts)
-        
-        outputs_tokens, cleaned_text = model.lm.generate_direct(
-            inputs,
-            motion_tokens=motion_tokens,
-            max_length=40,
-            num_beams=1,
-            do_sample=False,
-            gen_mode='text',
-        )
+                motion_tokens = model.lm.motion_feats_to_tokens(model.vae, motion_feats, lengths, modes='motion')
+
+                tasks = [{
+                    'class': 'm2t',
+                    'input': ['Describe the motion represented by <Motion_Placeholder> using plain English.'],
+                    'output': ['']
+                }] * len(lengths)
+                texts = [''] * len(lengths)
+
+                inputs, outputs, modes = model.lm.template_fulfill(tasks, lengths, texts)
+                
+                outputs_tokens, cleaned_text = model.lm.generate_direct(
+                    inputs,
+                    motion_tokens=motion_tokens,
+                    max_length=40,
+                    num_beams=1,
+                    do_sample=False,
+                    gen_mode='text',
+                )
+
+            # Type 2: MotionGPT
+            elif model_type == 'mgpt':
+
+                # Reference: /projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/motGPT/models/mgpt.py/L266
+
+                motion_tokens = []
+                token_lengths = []
+                
+                for i in range(len(motion_feats)):
+                    # VQ-VAE encode: (1, T, 263) -> (1, T//down_t) discrete token indices
+                    motion_token, _ = model.vae.encode(motion_feats[i:i + 1])
+                    motion_tokens.append(motion_token[0])  # Extract 1D tensor
+                    token_lengths.append(motion_token.shape[1])  # Token length after downsampling
+                motion_tokens = torch.stack(motion_tokens, dim=0)
+
+                # Reference: /projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/motGPT/archs/mgpt_lm.py/L279
+
+                motion_strings = model.lm.motion_token_to_string(
+                    motion_tokens, token_lengths)
+
+                tasks = [{
+                    'class': 'm2t',
+                    'input': ['Describe the motion represented by <Motion_Placeholder> using plain English.'],
+                    'output': ['']
+                }] * len(token_lengths)
+                texts = [''] * len(token_lengths)
+
+                inputs, outputs = model.lm.template_fulfill(tasks, token_lengths,
+                                                        motion_strings, texts)
+
+                outputs_tokens, cleaned_text = model.lm.generate_direct(
+                    inputs,
+                    max_length=40,
+                    num_beams=1,
+                    do_sample=False,
+                    # bad_words_ids=self.bad_words_ids
+                )
+
+                # extract only caption part
+                for i in range(len(cleaned_text)):
+                    cleaned_text[i] = cleaned_text[i].split('\n')[-1].strip().strip('"').replace('<motion_id_513>', '').strip()   # remove any residual motion id token
+
+            else:
+                raise NotImplementedError(f"Model type {model_type} not implemented.")
+            
         return cleaned_text
 
 

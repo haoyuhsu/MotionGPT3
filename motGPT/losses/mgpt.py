@@ -33,7 +33,7 @@ class GPTLosses(BaseLosses):
 
             losses.append("vq_commit")
             params['vq_commit'] = cfg.LOSS.LAMBDA_COMMIT
-        elif stage in ["lm_pretrain", "lm_instruct"]:
+        elif stage in ["lm_pretrain", "lm_instruct", "lm_t2m", "lm_m2t"]:
             losses.append("gpt_loss")
             params['gpt_loss'] = cfg.LOSS.LAMBDA_CLS
 
@@ -86,7 +86,7 @@ class GPTLosses(BaseLosses):
             total += self._update_loss("vq_commit", rs_set['loss_commit'],
                                        rs_set['loss_commit'])
 
-        if self.stage in ["lm_pretrain", "lm_instruct"]:
+        if self.stage in ["lm_pretrain", "lm_instruct", "lm_t2m", "lm_m2t"]:
             total += self._update_loss("gpt_loss", rs_set['outputs'].loss,
                                        rs_set['outputs'].loss)
 

@@ -49,6 +49,9 @@ class MotionGPT(BaseModel):
             for p in self.vae.parameters():
                 p.requires_grad = False
 
+        self.model_dir = cfg.FOLDER_EXP
+        self.vis_num = 2
+
         # Instantiate the losses
         self._losses = torch.nn.ModuleDict({
             split: GPTLosses(cfg, self.hparams.stage, self.datamodule.njoints)
@@ -121,17 +124,29 @@ class MotionGPT(BaseModel):
         return outputs
 
     def train_lm_forward(self, batch):
-        tokens_ref = batch["motion"]
+        # tokens_ref = batch["motion"]
+        feats_ref = batch["motion"]  # Continuous motion features
         texts = batch["text"]
-        lengths = batch["length"]
+        lengths = batch["length"]  # Original frame lengths
         tasks = batch["tasks"]
         all_captions = batch['all_captions']
         if self.hparams.condition == 'caption':
             texts = [random.choice(all_captions[i]) for i in range(len(texts))]
 
+        # Motion Encode: convert continuous features to discrete tokens
+        motion_tokens = []
+        token_lengths = []
+        for i in range(len(feats_ref)):
+            motion_token, _ = self.vae.encode(feats_ref[i:i + 1])
+            motion_tokens.append(motion_token[0])  # 1D tensor of token indices
+            token_lengths.append(motion_token.shape[1])  # Actual token length
+        motion_tokens = torch.stack(motion_tokens, dim=0)
+
         # LLM Forward
-        outputs = self.lm(texts, tokens_ref, lengths, tasks)
+        outputs = self.lm(texts, motion_tokens, token_lengths, tasks)
+        # outputs = self.lm(texts, tokens_ref, lengths, tasks)
         # outputs = self.t2m_gpt.generate(texts)
+
         return {'outputs': outputs}
 
     @torch.no_grad()
@@ -376,7 +391,7 @@ class MotionGPT(BaseModel):
         if self.hparams.stage == "vae" and split in ["train", "val"]:
             rs_set = self.train_vae_forward(batch)
             loss = self._losses['losses_' + split].update(rs_set)
-        elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_t2m"
+        elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_t2m", "lm_m2t"
                                     ] and split in ["train"]:
             # with torch.autograd.profiler.profile(use_cuda=True) as prof:
             rs_set = self.train_lm_forward(batch)
@@ -392,7 +407,7 @@ class MotionGPT(BaseModel):
         if split in ["val", "test"]:
             if self.hparams.stage == "vae":
                 rs_set = self.val_vae_forward(batch, split)
-            elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_rl", "lm_t2m"]:
+            elif self.hparams.stage in ["lm_instruct", "lm_pretrain", "lm_rl", "lm_t2m", "lm_m2t"]:
                 if self.hparams.task == "t2m":
                     rs_set = self.val_t2m_forward(batch)
                 elif self.hparams.task == "m2t":
@@ -497,7 +512,7 @@ class MotionGPT(BaseModel):
                         raise TypeError(f"Not support this metric {metric}")
 
             elif self.hparams.task == "m2t" and self.hparams.stage in [
-                    "lm_instruct", "lm_pretrain", "lm_rl", "lm_t2m"
+                    "lm_instruct", "lm_pretrain", "lm_rl", "lm_t2m", "lm_m2t"
             ]:
                 if batch_idx == 0:
                     from motGPT.utils.render_utils import render_motion
@@ -517,18 +532,19 @@ class MotionGPT(BaseModel):
                                         method='fast', fps=self.datamodule.fps)
                         np.savetxt(os.path.join(output_dir, f'{keyid}_gt.txt'), [batch['text'][idx]], fmt='%s')
                         np.savetxt(os.path.join(output_dir, f'{keyid}.txt'), [gen_texts[idx]], fmt='%s', encoding='utf-8')
-                self.hparams.metrics_dict = metrics_dicts = ['M2TMetrics']
-                for metric in metrics_dicts:
-                    if metric == "M2TMetrics":
-                        getattr(self.metrics, metric).update(
-                            feats_ref=rs_set["m_ref"],
-                            pred_texts=rs_set["t_pred"],
-                            gt_texts=batch["all_captions"],
-                            lengths=rs_set['length'],
-                            word_embs=batch["word_embs"],
-                            pos_ohot=batch["pos_ohot"],
-                            text_lengths=batch["text_len"],
-                        )
+                
+                # self.hparams.metrics_dict = metrics_dicts = ['M2TMetrics']
+                # for metric in metrics_dicts:
+                #     if metric == "M2TMetrics":
+                #         getattr(self.metrics, metric).update(
+                #             feats_ref=rs_set["m_ref"],
+                #             pred_texts=rs_set["t_pred"],
+                #             gt_texts=batch["all_captions"],
+                #             lengths=rs_set['length'],
+                #             word_embs=batch["word_embs"],
+                #             pos_ohot=batch["pos_ohot"],
+                #             text_lengths=batch["text_len"],
+                #         )
 
         # return forward output rather than loss during test
         if split in ["test"]:

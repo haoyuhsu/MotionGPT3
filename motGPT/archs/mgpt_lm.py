@@ -195,8 +195,10 @@ class MLM(nn.Module):
         motion_strings = self.motion_token_to_string(motion_tokens, lengths)
 
         # Supervised or unsupervised
-        condition = random.choice(
-            ['text', 'motion', 'supervised', 'supervised', 'supervised'])
+        # condition = random.choice(
+        #     ['text', 'motion', 'supervised', 'supervised', 'supervised'])
+
+        condition = 'supervised'  # FIXED: only supervised for m2t
 
         if condition == 'text':
             labels = texts
@@ -209,6 +211,9 @@ class MLM(nn.Module):
             for i in range(len(inputs)):
                 labels.append(inputs[i] + ' \n ' + outputs[i] +
                               self.tokenizer.eos_token)
+                
+        # print(inputs)
+        # print(outputs)
 
         # Tokenize
         inputs = self.tokenizer(labels,

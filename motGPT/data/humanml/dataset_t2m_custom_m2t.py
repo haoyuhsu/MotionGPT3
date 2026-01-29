@@ -45,7 +45,7 @@ class Text2MotionDatasetM2T(data.Dataset):
         self.custom_dataset = custom_dataset
 
         print('<----- Dataset settings: ----->')
-        print(f'-->  max_motion_length: {self.max_mfindotion_length}')
+        print(f'-->  max_motion_length: {self.max_motion_length}')
         print(f'-->  min_motion_length: {self.min_motion_length}')
         print(f'-->  unit_length: {self.unit_length}')
         print(f'-->  fps: {self.fps}')

@@ -395,7 +395,7 @@ if __name__ == "__main__":
     print(f"Dataset: {args.dataset}")
     print(f"Output directory: {args.out_dir}")
     
-    # Create a mock config
+    # Create a mock config 
     cfg = OmegaConf.create({
         'model': {
             'params': {
@@ -408,22 +408,92 @@ if __name__ == "__main__":
     metric = M2TMetrics(cfg=cfg, dataname='humanml3d')
     metric = metric.cuda() if torch.cuda.is_available() else metric
 
-    # Load data based on scenario
-    print("\nLoading data...")
-    if args.setting == 'ours_text':
-        pred_texts, gt_texts = load_our_text_prediction(args.dataset)
-    elif args.setting == 'ours_mgpt3':
-        pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
-    elif args.setting == 'mobileposer_mgpt3':
-        pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
+    # # Load data based on scenario
+    # print("\nLoading data...")
+    # if args.setting == 'ours_text':
+    #     pred_texts, gt_texts = load_our_text_prediction(args.dataset)
+    # elif args.setting == 'ours_mgpt3':
+    #     pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
+    # elif args.setting == 'mobileposer_mgpt3':
+    #     pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
 
-    assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
+    # assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
 
-    out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
+    # out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
+    # out_path = os.path.join(args.out_dir, out_fname)
+
+    # print("\nEvaluating metrics...")
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+
+
+    ######################################################################
+    # TODO: manually loading and evaluating for custom model settings
+    ######################################################################
+
+
+    # MobilePoser + MotionGPT text pred on HumanML test set
+    pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_mgpt_humanml_text_pred_from_scratch"
+    gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/humanml_gt_text.pkl"
+    
+    with open(gt_texts_file, 'rb') as f:
+        gt_texts_dict = pickle.load(f)
+
+    number_of_samples = len(gt_texts_dict)
+
+    gt_texts = []
+    gt_data_path = [gt_texts_dict[i] for i in range(number_of_samples)]
+    for data_path in tqdm(gt_data_path, desc="Loading ground truth"):
+
+        with open(data_path, 'rb') as f:
+            data = pickle.load(f)
+            if 'texts' in data:
+                gt_text = data['texts']
+            elif 'text' in data:
+                gt_text = data['text']
+            else:
+                raise ValueError("Ground truth text key not found.")
+            gt_texts.append(gt_text)
+    
+    pred_texts = []
+    for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+        with open(os.path.join(pred_texts_dir, f"sample_seq_{i:04d}.txt"), 'r') as f:
+            pred_text = f.read().strip()
+        pred_texts.append(pred_text)
+
+    out_fname = f"mobileposer_mgpt_humanml_metrics.txt"
     out_path = os.path.join(args.out_dir, out_fname)
 
     print("\nEvaluating metrics...")
     results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+
+
+
+    # Ours (IMU-Text) without motion modality on HumanML test set (NOTE: there is only 19k samples, may need re-evaluation)
+    pred_dir = "/scratch/bfyo/tcheng1/exp_text_only_test_humanml_6imu_2000frame/viz_test_generate_number_original"
+    gt_folder = "/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test"
+    files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
+    
+    pred_texts = []
+    gt_texts = []
+    for file in tqdm(files, desc="Loading predictions and ground truth"):
+        data = np.load(file, allow_pickle=True).item()
+        sample_idx = data['sample_idx'][0]
+        pred_text = data['pred']['description']
+        
+        sample = pickle.load(open(f"{gt_folder}/{sample_idx}.pkl", "rb"))
+        gt_text = sample['texts']  # list of text
+        
+        pred_texts.append(pred_text)
+        gt_texts.append(gt_text)
+
+    out_fname = f"ours_only_text_humanml_metrics.txt"
+    out_path = os.path.join(args.out_dir, out_fname)
+
+    print("\nEvaluating metrics...")
+    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+
+
+    
 
 
 
