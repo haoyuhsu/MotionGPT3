@@ -151,9 +151,9 @@ def main():
         base_name = os.path.basename(motion_feat_path).replace('.npy', '.txt')
         output_text_path = os.path.join(output_text_dir, base_name)
 
-        if os.path.exists(output_text_path):
-            print(f"Output text for {motion_feat_path} already exists, skipping...")
-            continue
+        # if os.path.exists(output_text_path):
+        #     print(f"Output text for {motion_feat_path} already exists, skipping...")
+        #     continue
         
         # Load and prepare
         motion_feats = torch.tensor(np.load(motion_feat_path), device=device)  # (motion_length, 263)
