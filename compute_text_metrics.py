@@ -196,7 +196,8 @@ def load_our_text_prediction(dataset):
     
     elif dataset == 'humanml':
         # pred_dir = "/work/hdd/bczy/tcheng1/exp_test_humanml_6imu_60frame/viz_test_generate_number"
-        pred_dir = "/scratch/bfyo/tcheng1/exp_test_finetuned_humanml_6imu_1000frame/viz_test_generate_number_original"
+        # pred_dir = "/scratch/bfyo/tcheng1/exp_test_finetuned_humanml_6imu_1000frame/viz_test_generate_number_original"
+        pred_dir = "/scratch/bfyo/tcheng1/exp_test_finetuned_humanml_6imu_120frame/viz_test_generate_number_shifted_0"
         gt_folder = "/work/hdd/benk/hhsu2/imu-humans/final_data_per_sequence/motion_data/test"
         files = sorted(glob.glob(os.path.join(pred_dir, "*.npy")))
         
@@ -408,22 +409,22 @@ if __name__ == "__main__":
     metric = M2TMetrics(cfg=cfg, dataname='humanml3d')
     metric = metric.cuda() if torch.cuda.is_available() else metric
 
-    # # Load data based on scenario
-    # print("\nLoading data...")
-    # if args.setting == 'ours_text':
-    #     pred_texts, gt_texts = load_our_text_prediction(args.dataset)
-    # elif args.setting == 'ours_mgpt3':
-    #     pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
-    # elif args.setting == 'mobileposer_mgpt3':
-    #     pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
+    # Load data based on scenario
+    print("\nLoading data...")
+    if args.setting == 'ours_text':
+        pred_texts, gt_texts = load_our_text_prediction(args.dataset)
+    elif args.setting == 'ours_mgpt3':
+        pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
+    elif args.setting == 'mobileposer_mgpt3':
+        pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
 
-    # assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
+    assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
 
-    # out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
-    # out_path = os.path.join(args.out_dir, out_fname)
+    out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
+    out_path = os.path.join(args.out_dir, out_fname)
 
-    # print("\nEvaluating metrics...")
-    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    print("\nEvaluating metrics...")
+    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
     ######################################################################
@@ -431,68 +432,68 @@ if __name__ == "__main__":
     ######################################################################
 
 
-    # IMUPoser + MotionGPT3 text pred on LINGO test set
-    pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_pred_imuposer_lingo_text_pred_mgpt3"
-    gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
+    # # IMUPoser + MotionGPT3 text pred on LINGO test set
+    # pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_pred_imuposer_lingo_text_pred_mgpt3"
+    # gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
 
-    with open('/home/haoyuyh3/Documents/maxhsu/imu-humans/IMUPoser/lingo_test_fname.txt', 'r') as f:
-        gt_fname_list = f.read().splitlines()
+    # with open('/home/haoyuyh3/Documents/maxhsu/imu-humans/IMUPoser/lingo_test_fname.txt', 'r') as f:
+    #     gt_fname_list = f.read().splitlines()
 
-    gt_texts, pred_texts = [], []
-    for i in tqdm(range(len(os.listdir(pred_texts_dir))), dynamic_ncols=True):
-        with open(os.path.join(pred_texts_dir, f"sample_{i:05d}.txt"), 'r') as f:
-            pred_text = f.read().strip()
+    # gt_texts, pred_texts = [], []
+    # for i in tqdm(range(len(os.listdir(pred_texts_dir))), dynamic_ncols=True):
+    #     with open(os.path.join(pred_texts_dir, f"sample_{i:05d}.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
         
-        gt_file_path = os.path.join(gt_texts_dir, gt_fname_list[i])
-        with open(gt_file_path, 'rb') as f:
-            data = pickle.load(f)
-            if 'texts' in data:
-                gt_text = data['texts']
-            elif 'text' in data:
-                gt_text = data['text']
-            else:
-                raise ValueError("Ground truth text key not found.")
+    #     gt_file_path = os.path.join(gt_texts_dir, gt_fname_list[i])
+    #     with open(gt_file_path, 'rb') as f:
+    #         data = pickle.load(f)
+    #         if 'texts' in data:
+    #             gt_text = data['texts']
+    #         elif 'text' in data:
+    #             gt_text = data['text']
+    #         else:
+    #             raise ValueError("Ground truth text key not found.")
         
-        pred_texts.append(pred_text)
-        gt_texts.append(gt_text)
+    #     pred_texts.append(pred_text)
+    #     gt_texts.append(gt_text)
 
-    out_fname = f"imuposer_mgpt3_lingo_metrics.txt"
-    out_path = os.path.join(args.out_dir, out_fname)
+    # out_fname = f"imuposer_mgpt3_lingo_metrics.txt"
+    # out_path = os.path.join(args.out_dir, out_fname)
 
-    print("\nEvaluating metrics...")
-    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    # print("\nEvaluating metrics...")
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
-    # IMUPoser + MotionGPT text pred on LINGO test set
-    pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_pred_imuposer_lingo_text_pred_mgpt"
-    gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
+    # # IMUPoser + MotionGPT text pred on LINGO test set
+    # pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_pred_imuposer_lingo_text_pred_mgpt"
+    # gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
 
-    with open('/home/haoyuyh3/Documents/maxhsu/imu-humans/IMUPoser/lingo_test_fname.txt', 'r') as f:
-        gt_fname_list = f.read().splitlines()
+    # with open('/home/haoyuyh3/Documents/maxhsu/imu-humans/IMUPoser/lingo_test_fname.txt', 'r') as f:
+    #     gt_fname_list = f.read().splitlines()
 
-    gt_texts, pred_texts = [], []
-    for i in tqdm(range(len(os.listdir(pred_texts_dir))), dynamic_ncols=True):
-        with open(os.path.join(pred_texts_dir, f"sample_{i:05d}.txt"), 'r') as f:
-            pred_text = f.read().strip()
+    # gt_texts, pred_texts = [], []
+    # for i in tqdm(range(len(os.listdir(pred_texts_dir))), dynamic_ncols=True):
+    #     with open(os.path.join(pred_texts_dir, f"sample_{i:05d}.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
         
-        gt_file_path = os.path.join(gt_texts_dir, gt_fname_list[i])
-        with open(gt_file_path, 'rb') as f:
-            data = pickle.load(f)
-            if 'texts' in data:
-                gt_text = data['texts']
-            elif 'text' in data:
-                gt_text = data['text']
-            else:
-                raise ValueError("Ground truth text key not found.")
+    #     gt_file_path = os.path.join(gt_texts_dir, gt_fname_list[i])
+    #     with open(gt_file_path, 'rb') as f:
+    #         data = pickle.load(f)
+    #         if 'texts' in data:
+    #             gt_text = data['texts']
+    #         elif 'text' in data:
+    #             gt_text = data['text']
+    #         else:
+    #             raise ValueError("Ground truth text key not found.")
         
-        pred_texts.append(pred_text)
-        gt_texts.append(gt_text)
+    #     pred_texts.append(pred_text)
+    #     gt_texts.append(gt_text)
 
-    out_fname = f"imuposer_mgpt_lingo_metrics.txt"
-    out_path = os.path.join(args.out_dir, out_fname)
+    # out_fname = f"imuposer_mgpt_lingo_metrics.txt"
+    # out_path = os.path.join(args.out_dir, out_fname)
 
-    print("\nEvaluating metrics...")
-    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    # print("\nEvaluating metrics...")
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
     # # IMUPoser + MotionGPT3 text pred on HumanML test set
@@ -559,8 +560,44 @@ if __name__ == "__main__":
     # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
+    # MobilePoser + MotionGPT text pred on LINGO test set
+    # pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_mgpt_lingo_text_pred_from_scratch"
+    # gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/LINGO_gt_text.pkl"
+    
+    # with open(gt_texts_file, 'rb') as f:
+    #     gt_texts_dict = pickle.load(f)
 
-    # MobilePoser + MotionGPT text pred on HumanML test set
+    # number_of_samples = len(gt_texts_dict)
+
+    # gt_texts = []
+    # gt_data_path = [gt_texts_dict[i] for i in range(number_of_samples)]
+    # for data_path in tqdm(gt_data_path, desc="Loading ground truth"):
+
+    #     with open(data_path, 'rb') as f:
+    #         data = pickle.load(f)
+    #         if 'texts' in data:
+    #             gt_text = data['texts']
+    #         elif 'text' in data:
+    #             gt_text = data['text']
+    #         else:
+    #             raise ValueError("Ground truth text key not found.")
+    #         gt_texts.append(gt_text)
+    
+    # pred_texts = []
+    # for i in tqdm(range(number_of_samples), desc="Loading predictions"):
+    #     with open(os.path.join(pred_texts_dir, f"sample_seq_{i:04d}.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
+    #     pred_texts.append(pred_text)
+
+    # out_fname = f"mobileposer_mgpt_lingo_metrics.txt"
+    # out_path = os.path.join(args.out_dir, out_fname)
+
+    # print("\nEvaluating metrics...")
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+
+
+
+    # # MobilePoser + MotionGPT text pred on HumanML test set
     # pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_mgpt_humanml_text_pred_from_scratch"
     # gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/humanml_gt_text.pkl"
     
