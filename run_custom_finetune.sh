@@ -41,10 +41,19 @@
 
 
 
+# python -m train \
+#     --cfg configs/mgpt_vae_custom_from_scratch_humanml.yaml \
+#     --nodebug
+
+# python -m train \
+#     --cfg configs/mgpt_vae_custom_from_scratch_lingo.yaml \
+#     --nodebug
+
+
 python -m train \
-    --cfg configs/mgpt_vae_custom_from_scratch_humanml.yaml \
+    --cfg configs/mgpt_vae_custom_from_scratch_all.yaml \
     --nodebug
 
 python -m train \
-    --cfg configs/mgpt_vae_custom_from_scratch_lingo.yaml \
+    --cfg configs/MoT_vae_custom_from_scratch_all.yaml \
     --nodebug

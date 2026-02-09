@@ -26,7 +26,7 @@ class Text2MotionDatasetM2T(data.Dataset):
         custom_dataset="humanml",
         **kwargs,
     ):
-        if custom_dataset == "humanml" or custom_dataset == "lingo":
+        if custom_dataset == "humanml" or custom_dataset == "lingo" or custom_dataset == "all":
             self.data_root = '/work/hdd/bfyo/hhsu2/imu-humans/final_data_per_sequence'
         elif custom_dataset == "parahome":
             self.data_root = '/scratch/bfyo/tcheng1/dataset_process/ParaHome'
@@ -56,7 +56,7 @@ class Text2MotionDatasetM2T(data.Dataset):
 
         self.motion_dir = pjoin(self.data_root, 'motion_data', split)
 
-        if custom_dataset in ["humanml", "lingo"]:
+        if custom_dataset in ["humanml", "lingo", "all"]:
             self.splits_dir = pjoin(self.data_root, 'splits')
 
             # Get all ids in specific split
@@ -72,6 +72,41 @@ class Text2MotionDatasetM2T(data.Dataset):
             elif custom_dataset == "lingo":
                 target_datasets = [
                     'LINGO',
+                ]
+            elif custom_dataset == "all":
+                target_datasets = [
+                    'LINGO',
+                    'Mirror_BABEL',
+                    'Mirror_MotionLLAMA/aist',
+                    'Mirror_MotionLLAMA/finedance',
+                    'Mirror_MotionLLAMA/fit3d',
+                    'Mirror_MotionLLAMA/hi4d',
+                    'Mirror_MotionLLAMA/humansc3d',
+                    'Mirror_MotionLLAMA/interhuman',
+                    'Mirror_MotionLLAMA/interx',
+                    'Mirror_MotionLLAMA/trumans',
+                    'Mirror_MotionUnion/EgoBody',
+                    'Mirror_MotionUnion/haa500',
+                    'Mirror_MotionUnion/humanml',
+                    'Mirror_MotionUnion/idea400',
+                    'Mirror_MotionUnion/kungfu',
+                    'Mirror_MotionUnion/music',
+                    'Mirror_PhantomDanceDatav1.1',
+                    'MotionLLAMA/aist',
+                    'MotionLLAMA/finedance',
+                    'MotionLLAMA/fit3d',
+                    'MotionLLAMA/hi4d',
+                    'MotionLLAMA/humansc3d',
+                    'MotionLLAMA/interhuman',
+                    'MotionLLAMA/interx',
+                    'MotionLLAMA/trumans',
+                    'MotionUnion/EgoBody',
+                    'MotionUnion/haa500',
+                    'MotionUnion/humanml',
+                    'MotionUnion/idea400',
+                    'MotionUnion/kungfu',
+                    'MotionUnion/music',
+                    'PhantomDanceDatav1.1',
                 ]
             
             self.id_list = [
@@ -99,7 +134,7 @@ class Text2MotionDatasetM2T(data.Dataset):
 
             motion = data['motion_263']
 
-            if custom_dataset in ["humanml", "lingo", "humoto"]:
+            if custom_dataset in ["humanml", "lingo", "humoto", "all"]:
                 texts = data['texts']
 
                 if len(motion) < self.min_motion_length:  # skip short motions
