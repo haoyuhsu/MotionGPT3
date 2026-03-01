@@ -35,8 +35,8 @@ TRAIN:
   NUM_WORKERS: 8 # Number of workers
   BATCH_SIZE: 32 # Size of batches
   # accumulate_grad_batches: 1
-  END_EPOCH: 15 # End epoch
-  RESUME: '' # Resume training from this path
+  END_EPOCH: 30 # End epoch
+  RESUME: '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/MotionGPT3/experiments/mgpt/mgpt_vae_custom_from_scratch_all' # Resume training from this path
   PRETRAINED: '' # Preatrained model path
   PRETRAINED_VAE: checkpoints/MotionGPT-base/motiongpt_s3_h3d.tar # Vae model path
 

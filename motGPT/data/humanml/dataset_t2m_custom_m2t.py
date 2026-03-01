@@ -115,6 +115,10 @@ class Text2MotionDatasetM2T(data.Dataset):
                     'Mirror_MotionGV/folder3',
                     'Mirror_MotionGV/folder4',
                     'Mirror_MotionGV/folder5',
+                    'Mirror_MotionGV/folder6',
+                    'Mirror_MotionGV/folder7',
+                    'Mirror_MotionGV/folder8',
+                    'Mirror_MotionGV/folder9',
                 ]
             
             self.id_list = [
