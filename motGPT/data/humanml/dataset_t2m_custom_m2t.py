@@ -27,7 +27,8 @@ class Text2MotionDatasetM2T(data.Dataset):
         **kwargs,
     ):
         if custom_dataset == "humanml" or custom_dataset == "lingo" or custom_dataset == "all":
-            self.data_root = '/work/hdd/bfyo/hhsu2/imu-humans/final_data_per_sequence'
+            # self.data_root = '/work/hdd/bfyo/hhsu2/imu-humans/final_data_per_sequence'
+            self.data_root = '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/data/final_data_per_sequence_smpl'
         elif custom_dataset == "parahome":
             self.data_root = '/scratch/bfyo/tcheng1/dataset_process/ParaHome'
         elif custom_dataset == "humoto":
@@ -52,7 +53,8 @@ class Text2MotionDatasetM2T(data.Dataset):
         print(f'-->  custom_dataset: {self.custom_dataset}')
         print(f'-->  data_root: {self.data_root}')
 
-        instructions = '/projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/prepare/instructions/template_instructions.json'
+        # instructions = '/projects/benk/hhsu2/imu-humans/related_works/MotionGPT3/prepare/instructions/template_instructions.json'
+        instructions = '/projects/illinois/eng/cs/shenlong/personals/haoyu/imu-humans/MotionGPT3/prepare/instructions/template_instructions.json'
 
         self.motion_dir = pjoin(self.data_root, 'motion_data', split)
 
@@ -107,6 +109,12 @@ class Text2MotionDatasetM2T(data.Dataset):
                     'MotionUnion/kungfu',
                     'MotionUnion/music',
                     'PhantomDanceDatav1.1',
+                    'Mirror_MotionGV/folder0',
+                    'Mirror_MotionGV/folder1',
+                    'Mirror_MotionGV/folder2',
+                    'Mirror_MotionGV/folder3',
+                    'Mirror_MotionGV/folder4',
+                    'Mirror_MotionGV/folder5',
                 ]
             
             self.id_list = [
