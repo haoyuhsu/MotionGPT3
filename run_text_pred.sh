@@ -54,9 +54,9 @@
 
 
 # imuposer (smplx) / motiongpt3 / lingo
-python demo_custom_ckpts_ours.py --cfg ./configs/MoT_vae_custom_from_scratch_lingo.yaml \
-    --input_263_dim_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/263d \
-    --output_text_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt3
+# python demo_custom_ckpts_ours.py --cfg ./configs/MoT_vae_custom_from_scratch_lingo.yaml \
+#     --input_263_dim_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/263d \
+#     --output_text_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt3
 
 
 ##### Train from scratch on MotionGPT models #####
@@ -79,6 +79,15 @@ python demo_custom_ckpts_ours.py --cfg ./configs/MoT_vae_custom_from_scratch_lin
 
 
 # imuposer (smplx) / motiongpt / lingo
-python demo_custom_ckpts_ours.py --cfg ./configs/mgpt_vae_custom_from_scratch_lingo.yaml \
-    --input_263_dim_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/263d \
-    --output_text_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt
+# python demo_custom_ckpts_ours.py --cfg ./configs/mgpt_vae_custom_from_scratch_lingo.yaml \
+#     --input_263_dim_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/263d \
+#     --output_text_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt
+
+
+
+
+
+
+python demo_custom_ckpts_ours.py --cfg ./configs/MoT_vae_custom_finetune_parahome.yaml \
+    --input_263_dim_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/MotionGPT3/result_parahome_263dim \
+    --output_text_dir /home/haoyuyh3/Documents/maxhsu/imu-humans/MotionGPT3/mobileposer_parahome_text_pred_mgpt3

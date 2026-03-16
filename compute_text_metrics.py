@@ -337,8 +337,10 @@ def load_mobileposer_motiongpt3(dataset):
         pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_humoto_text_pred_from_scratch"
         gt_texts_file = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/gt_text/HUMOTO_gt_text.pkl"
     elif dataset == 'parahome':
-        pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_parahome_text_pred_from_scratch"
-        gt_texts_file = "/scratch/benk/tcheng1/gt_text/ParaHome_gt_text.pkl"
+        # pred_texts_dir = "/projects/benk/hhsu2/imu-humans/related_works/Mocap-to-SMPLX/test_data_mobileposer/result_parahome_text_pred_from_scratch"
+        # gt_texts_file = "/scratch/benk/tcheng1/gt_text/ParaHome_gt_text.pkl"
+        pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/MotionGPT3/mobileposer_parahome_text_pred_mgpt3"
+        gt_texts_file = "/home/haoyuyh3/Documents/maxhsu/imu-humans/ParaHome/ParaHome_gt_text_new.pkl"
     
     with open(gt_texts_file, 'rb') as f:
         gt_texts_dict = pickle.load(f)
@@ -347,7 +349,8 @@ def load_mobileposer_motiongpt3(dataset):
     
     if dataset == 'parahome':
         # TODO: may need update
-        gt_texts = [gt_texts_dict[i] for i in range(number_of_samples)]
+        # gt_texts = [gt_texts_dict[i] for i in range(number_of_samples)]
+        gt_texts = list(gt_texts_dict.values())
     elif dataset in ['humanml', 'lingo', 'humoto']:
         gt_texts = []
         gt_data_path = [gt_texts_dict[i] for i in range(number_of_samples)]
@@ -409,89 +412,89 @@ if __name__ == "__main__":
     metric = M2TMetrics(cfg=cfg, dataname='humanml3d')
     metric = metric.cuda() if torch.cuda.is_available() else metric
 
-    # # Load data based on scenario
-    # print("\nLoading data...")
-    # if args.setting == 'ours_text':
-    #     pred_texts, gt_texts = load_our_text_prediction(args.dataset)
-    # elif args.setting == 'ours_mgpt3':
-    #     pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
-    # elif args.setting == 'mobileposer_mgpt3':
-    #     pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
+    # Load data based on scenario
+    print("\nLoading data...")
+    if args.setting == 'ours_text':
+        pred_texts, gt_texts = load_our_text_prediction(args.dataset)
+    elif args.setting == 'ours_mgpt3':
+        pred_texts, gt_texts = load_our_motion_motiongpt3(args.dataset)
+    elif args.setting == 'mobileposer_mgpt3':
+        pred_texts, gt_texts = load_mobileposer_motiongpt3(args.dataset)
 
-    # assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
+    assert len(pred_texts) == len(gt_texts), "Number of predictions and ground truths must match"
 
-    # out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
-    # out_path = os.path.join(args.out_dir, out_fname)
+    out_fname = f"{args.setting}_{args.dataset}_metrics.txt"
+    out_path = os.path.join(args.out_dir, out_fname)
 
-    # print("\nEvaluating metrics...")
-    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    print("\nEvaluating metrics...")
+    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
     ######################################################################
     # TODO: manually loading and evaluating for custom model settings
     ######################################################################
 
-    pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt3"
-    gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
+    # pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt3"
+    # gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
 
-    fname_list = sorted([f for f in os.listdir(gt_texts_dir) if f.endswith('.pkl')])
+    # fname_list = sorted([f for f in os.listdir(gt_texts_dir) if f.endswith('.pkl')])
 
-    gt_texts, pred_texts = [], []
-    for i, fname in tqdm(enumerate(fname_list), dynamic_ncols=True):
+    # gt_texts, pred_texts = [], []
+    # for i, fname in tqdm(enumerate(fname_list), dynamic_ncols=True):
 
-        name = fname.split('.')[0]  # e.g., "xxx.pkl" -> "xxx"
+    #     name = fname.split('.')[0]  # e.g., "xxx.pkl" -> "xxx"
 
-        with open(os.path.join(pred_texts_dir, f"{name}.txt"), 'r') as f:
-            pred_text = f.read().strip()
+    #     with open(os.path.join(pred_texts_dir, f"{name}.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
         
-        gt_file_path = os.path.join(gt_texts_dir, fname)
-        with open(gt_file_path, 'rb') as f:
-            data = pickle.load(f)
-            if 'texts' in data:
-                gt_text = data['texts']
-            elif 'text' in data:
-                gt_text = data['text']
-            else:
-                raise ValueError("Ground truth text key not found.")
+    #     gt_file_path = os.path.join(gt_texts_dir, fname)
+    #     with open(gt_file_path, 'rb') as f:
+    #         data = pickle.load(f)
+    #         if 'texts' in data:
+    #             gt_text = data['texts']
+    #         elif 'text' in data:
+    #             gt_text = data['text']
+    #         else:
+    #             raise ValueError("Ground truth text key not found.")
         
-        pred_texts.append(pred_text)
-        gt_texts.append(gt_text)
+    #     pred_texts.append(pred_text)
+    #     gt_texts.append(gt_text)
 
-    print("\nEvaluating metrics...")
-    out_path = os.path.join('/home/haoyuyh3/Documents/maxhsu/imu-humans/metric_results/text', 'imuposer_smplx_mgpt3_lingo_metrics.txt')
-    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    # print("\nEvaluating metrics...")
+    # out_path = os.path.join('/home/haoyuyh3/Documents/maxhsu/imu-humans/metric_results/text', 'imuposer_smplx_mgpt3_lingo_metrics.txt')
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
 
-    pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt"
-    gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
+    # pred_texts_dir = "/home/haoyuyh3/Documents/maxhsu/imu-humans/_tmp_data/_pred_imuposer_smplx/lingo_global/text_pred_mgpt"
+    # gt_texts_dir = "/home/haoyuyh3/Downloads/lingo_smpl_files/test"
 
-    fname_list = sorted([f for f in os.listdir(gt_texts_dir) if f.endswith('.pkl')])
+    # fname_list = sorted([f for f in os.listdir(gt_texts_dir) if f.endswith('.pkl')])
 
-    gt_texts, pred_texts = [], []
-    for i, fname in tqdm(enumerate(fname_list), dynamic_ncols=True):
+    # gt_texts, pred_texts = [], []
+    # for i, fname in tqdm(enumerate(fname_list), dynamic_ncols=True):
 
-        name = fname.split('.')[0]  # e.g., "xxx.pkl" -> "xxx"
+    #     name = fname.split('.')[0]  # e.g., "xxx.pkl" -> "xxx"
 
-        with open(os.path.join(pred_texts_dir, f"{name}.txt"), 'r') as f:
-            pred_text = f.read().strip()
+    #     with open(os.path.join(pred_texts_dir, f"{name}.txt"), 'r') as f:
+    #         pred_text = f.read().strip()
         
-        gt_file_path = os.path.join(gt_texts_dir, fname)
-        with open(gt_file_path, 'rb') as f:
-            data = pickle.load(f)
-            if 'texts' in data:
-                gt_text = data['texts']
-            elif 'text' in data:
-                gt_text = data['text']
-            else:
-                raise ValueError("Ground truth text key not found.")
+    #     gt_file_path = os.path.join(gt_texts_dir, fname)
+    #     with open(gt_file_path, 'rb') as f:
+    #         data = pickle.load(f)
+    #         if 'texts' in data:
+    #             gt_text = data['texts']
+    #         elif 'text' in data:
+    #             gt_text = data['text']
+    #         else:
+    #             raise ValueError("Ground truth text key not found.")
         
-        pred_texts.append(pred_text)
-        gt_texts.append(gt_text)
+    #     pred_texts.append(pred_text)
+    #     gt_texts.append(gt_text)
 
-    print("\nEvaluating metrics...")
-    out_path = os.path.join('/home/haoyuyh3/Documents/maxhsu/imu-humans/metric_results/text', 'imuposer_smplx_mgpt_lingo_metrics.txt')
-    results = eval_and_save(metric, pred_texts, gt_texts, out_path)
+    # print("\nEvaluating metrics...")
+    # out_path = os.path.join('/home/haoyuyh3/Documents/maxhsu/imu-humans/metric_results/text', 'imuposer_smplx_mgpt_lingo_metrics.txt')
+    # results = eval_and_save(metric, pred_texts, gt_texts, out_path)
 
 
 

@@ -161,6 +161,8 @@ def main():
 
         if 'parahome' in cfg.NAME:
             max_motion_len = cfg.DATASET.HUMANML3D.MAX_MOTION_LEN
+
+            motion_feats = motion_feats[:200]   # TODO: temporary debug to use first 200 frames
             
             motion_length = motion_feats.shape[0]
             num_chunks = motion_length // max_motion_len + 1
